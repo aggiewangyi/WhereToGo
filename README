@@ -1,0 +1,130 @@
+# WhereToGo
+
+WhereToGo 是一个 AI 驱动的旅行规划项目，包含前后端完整实现：
+- 前端使用 Vue 3 + Vite 提供对话与行程展示
+- 后端使用 FastAPI + LangGraph 实现多智能体编排（意图识别 -> 行程规划 -> 行前建议）
+- 集成 MySQL、Redis 和 302.AI（LLM / 搜索 / 翻译等能力）
+
+## 技术栈
+
+- Frontend: Vue 3, Vite, Pinia, Element Plus
+- Backend: FastAPI, SQLAlchemy, Alembic, LangChain, LangGraph
+- Database: MySQL 8
+- Cache: Redis
+- AI Gateway: 302.AI
+
+## 目录结构
+
+- `frontend`: 前端工程
+- `backend`: 后端工程
+- `docs`: 设计与技术文档
+- `docker-compose.yml`: 本地容器编排（backend + mysql + redis）
+
+## 首次拉取后如何启动
+
+### 0) 克隆项目
+
+```bash
+git clone <your-repo-url>
+cd wheretogo
+```
+
+### 1) 配置后端环境变量
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+然后至少检查以下配置：
+- `API_302_KEY`
+- `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASSWORD` / `DB_NAME`
+- `REDIS_URL`
+
+## Windows 启动（推荐）
+
+### 启动后端
+
+仓库已提供脚本：`backend/start-backend.bat`
+
+```bat
+cd backend
+start-backend.bat
+```
+
+脚本会执行：
+
+```bat
+call conda activate wheretogo
+poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+> 首次启动前请先在 `backend` 目录执行一次 `poetry install`。
+
+### 启动前端
+
+仓库根目录已有脚本：`start-frontend.cmd`
+
+```bat
+start-frontend.cmd
+```
+
+或手动：
+
+```bat
+cd frontend
+npm install
+npm run dev -- --host 0.0.0.0 --port 3000
+```
+
+## 跨平台手动启动（macOS / Linux / Windows）
+
+### 后端
+
+```bash
+cd backend
+poetry install
+poetry run alembic upgrade head
+poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### 前端
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+默认访问：
+- 前端：`http://127.0.0.1:3000`
+- 后端：`http://127.0.0.1:8000`
+
+前端已配置 `/api` 代理到后端 `8000`。
+
+## Docker 启动（可选）
+
+如需快速起后端 + MySQL + Redis：
+
+```bash
+docker compose up --build
+```
+
+默认端口：
+- Backend: `8000`
+- MySQL: `3306`
+- Redis: `6379`
+
+## 常见问题
+
+- `ModuleNotFoundError: aiomysql`
+  - 通常是没在 Poetry 环境里启动，请使用 `poetry run uvicorn ...`
+  - 首次请先执行 `poetry install`
+
+- 后端启动即退出（数据库连接失败）
+  - `app/main.py` 的 `lifespan` 启动时会验证数据库连接
+  - 请先确认 MySQL 已启动且 `.env` 配置正确
+
+- 前端请求失败
+  - 确认后端已在 `8000` 端口启动
+  - 确认 `frontend/vite.config.ts` 的 proxy 指向 `http://127.0.0.1:8000`
